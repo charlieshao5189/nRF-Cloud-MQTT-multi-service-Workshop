@@ -220,6 +220,8 @@ void main_application(void)
 		LOG_WRN("Failed to determine valid date time. Proceeding anyways");
 	} else {
 		LOG_INF("Current date and time determined");
+		LOG_INF("Welcome to this Workshop! See this message on nRF Cloud Terminal");
+		send_sensor_sample("Welcome to this Workshop!",0);
 	}
 
 	/* Begin tracking location at the configured interval. */
