@@ -142,3 +142,7 @@ index 58f13e6..59a2f96 100644
                                         CONFIG_LOCATION_TRACKING_SAMPLE_INTERVAL_SECONDS);
 ```
 ![image](pics/buttonpress_publish_temp_messge.png)
+
+### Step 3 - Control the RGB LED on the Thingy91 using the CAF module
+### Step 4 - Add commands to turn on and off the LED from the nRF Cloud
+### Step 5 - Add a thermostat function
