@@ -173,6 +173,12 @@ config TEST_COUNTER
 
 endmenu
 
+config CLOUD_PUBLICATION_BUTTON_PRESS
+	bool "Triggers publication to cloud upon a button press"
+        default y
+	help
+	  press button to publish temperature message to nRF cloud.
+
 module = MQTT_MULTI_SERVICE
 module-str = MQTT Multi Service
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"

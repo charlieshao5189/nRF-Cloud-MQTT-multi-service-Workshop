@@ -19,10 +19,16 @@
 
 #include "location_tracking.h"
 
+#include <dk_buttons_and_leds.h>
+
 LOG_MODULE_REGISTER(application, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
 
 /* Timer used to time the sensor sampling rate. */
 static K_TIMER_DEFINE(sensor_sample_timer, NULL, NULL);
+
+#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
+static struct k_work_delayable cloud_update_work;
+#endif
 
 /**
  * @brief Construct a data device message cJSON object with automatically generated timestamp.
@@ -210,6 +216,30 @@ static void on_location_update(const struct location_data location_data)
 	}
 }
 
+#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
+static void cloud_update_work_fn(struct k_work *work)
+{
+	if (IS_ENABLED(CONFIG_TEMP_TRACKING)) {
+		double temp = -1;
+		if (get_temperature(&temp) == 0) {
+			LOG_INF("Temperature is %d degrees C", (int)temp);
+			(void)send_sensor_sample(NRF_CLOUD_JSON_APPID_VAL_TEMP, temp);
+		}
+	}
+}
+static void work_init(void)
+{
+	k_work_init_delayable(&cloud_update_work, cloud_update_work_fn);
+}
+static void button_handler(uint32_t button_states, uint32_t has_changed)
+{
+	LOG_INF("Button is pressed! Collect and send temperature to nRF Cloud.");
+	if (has_changed & button_states & DK_BTN1_MSK) {
+		k_work_reschedule(&cloud_update_work, K_NO_WAIT);
+	}
+}
+#endif
+
 void main_application(void)
 {
 	/* Wait for the date and time to become known.
@@ -223,6 +253,16 @@ void main_application(void)
 		LOG_INF("Welcome to this Workshop! See this message on nRF Cloud Terminal");
 		send_sensor_sample("Welcome to this Workshop!",0);
 	}
+
+	#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
+	        int err;
+	        work_init();
+		LOG_INF("Button is initialized!");
+		err = dk_buttons_init(button_handler);
+		if (err) {
+			LOG_ERR("dk_buttons_init, error: %d", err);
+		}
+	#endif
 
 	/* Begin tracking location at the configured interval. */
 	(void)start_location_tracking(on_location_update,
