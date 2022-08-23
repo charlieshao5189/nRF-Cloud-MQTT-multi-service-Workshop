@@ -19,6 +19,8 @@
 
 LOG_MODULE_REGISTER(connection, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
 
+extern struct k_work_delayable cloud_update_work;
+
 /* Flow control event identifiers */
 
 /* LTE either is connected or isn't */
@@ -209,6 +211,39 @@ static void date_time_evt_handler(const struct date_time_evt *date_time_evt)
 	}
 }
 
+// This function expects a cloud message on the format {"TYPE":"VALUE"}, where TYPE and VALUE are strings
+// If TYPE mathces target_type_str, and VALUE matches target_value_str, the function returns true
+bool decode_cloud_message(const char *buf, size_t len, const uint8_t *target_type_str, const uint8_t *target_value_str)
+{
+	static uint8_t type_string[64];
+	static uint8_t value_string[64];
+	int type_index = 0, value_index = 0, delimiter_counter = 0;
+
+	// Go through the cloud message looking for the " delimiters, and moving the TYPE and VALUE string into temporary variables
+	for(int i = 0; i < len; i++) {
+		if(buf[i] == '\"') delimiter_counter++;
+		else {
+			switch(delimiter_counter) {
+				case 0: break; // Do nothing, still waiting for the first delimiter
+				case 1:
+					type_string[type_index++] = buf[i]; // Copy the type string
+					break;
+				case 2: break; // Do nothing, waiting for the third delimiter
+				case 3:
+					// Copy the value string
+					value_string[value_index++] = buf[i];
+					break;
+				default: break; // If the delimiter is 4 or more we are at the end of the message
+			}
+		}
+	}
+	// Add null termination to the strings
+	type_string[type_index] = 0;
+	value_string[value_index] = 0;
+
+	// Return true if both the type and value strings match
+	return strcmp(type_string, target_type_str) == 0 && strcmp(value_string, target_value_str) == 0;
+}
 /**
  * @brief Handler for events from nRF Cloud Lib.
  *
@@ -279,6 +314,13 @@ static void cloud_event_handler(const struct nrf_cloud_evt *nrf_cloud_evt)
 		 * assistance data ourselves.
 		 */
 		location_assistance_data_handler(nrf_cloud_evt->data.ptr, nrf_cloud_evt->data.len);
+
+                // Upon receiving the message {"temp":"read"} from the cloud, initiate a temperature reading
+                if(decode_cloud_message(nrf_cloud_evt->data.ptr, nrf_cloud_evt->data.len, "temp", "read")) {
+                LOG_INF("Temperature read command received");
+                k_work_reschedule(&cloud_update_work, K_NO_WAIT);
+                }
+                
 		break;
 	case NRF_CLOUD_EVT_FOTA_START:
 		LOG_DBG("NRF_CLOUD_EVT_FOTA_START");

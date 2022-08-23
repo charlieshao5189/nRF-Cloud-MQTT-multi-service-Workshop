@@ -26,9 +26,7 @@ LOG_MODULE_REGISTER(application, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
 /* Timer used to time the sensor sampling rate. */
 static K_TIMER_DEFINE(sensor_sample_timer, NULL, NULL);
 
-#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
-static struct k_work_delayable cloud_update_work;
-#endif
+struct k_work_delayable cloud_update_work;
 
 /**
  * @brief Construct a data device message cJSON object with automatically generated timestamp.
@@ -216,7 +214,7 @@ static void on_location_update(const struct location_data location_data)
 	}
 }
 
-#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
+
 static void cloud_update_work_fn(struct k_work *work)
 {
 	if (IS_ENABLED(CONFIG_TEMP_TRACKING)) {
@@ -231,10 +229,13 @@ static void work_init(void)
 {
 	k_work_init_delayable(&cloud_update_work, cloud_update_work_fn);
 }
+
+#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
 static void button_handler(uint32_t button_states, uint32_t has_changed)
 {
-	LOG_INF("Button is pressed! Collect and send temperature to nRF Cloud.");
+
 	if (has_changed & button_states & DK_BTN1_MSK) {
+                LOG_INF("Button is pressed! Collect and send temperature to nRF Cloud.");
 		k_work_reschedule(&cloud_update_work, K_NO_WAIT);
 	}
 }
@@ -254,10 +255,10 @@ void main_application(void)
 		send_sensor_sample("Welcome to this Workshop!",0);
 	}
 
-	#if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
-	        int err;
-	        work_init();
-		LOG_INF("Button is initialized!");
+        work_init();
+        LOG_INF("Button is initialized!");
+        #if defined(CONFIG_CLOUD_PUBLICATION_BUTTON_PRESS)
+                int err;
 		err = dk_buttons_init(button_handler);
 		if (err) {
 			LOG_ERR("dk_buttons_init, error: %d", err);
