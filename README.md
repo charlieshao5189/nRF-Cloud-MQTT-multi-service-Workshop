@@ -1,5 +1,10 @@
 # nRF-Cloud-MQTT-multi-service-Workshop
-Workshop based on NCS2.0.0 sample nRF9160: nRF Cloud MQTT multi-service
+Workshop based on NCS2.0.0 sample nRF9160: nRF Cloud MQTT multi-service.
+
+This workshop is modified from [Cloud Client nRF91 Workshop](https://github.com/NordicPlayground/ncs-cloud-client-workshop/tree/workshop_with_instructions), which is based on NCS1.9.0 [nRF9160: Cloud client](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/1.9.0/nrf/samples/nrf9160/cloud_client/README.html) sample. This cloud client sample was made to showcase the cloud API but the general cloud API has been removed from NCS2.0.0, so this sample is not avaliable anymore. The cloud API is abandoned due to some reasons. This API made it possible to interchange cloud backends at run time, which is not viable in a real-life application. The cloud API was also difficult to keep generic because of the vast differences between some cloud backends. Nordic wants to encourage users to use the different cloud backend's specific APIs directly and not via a generic layer. It was just too limiting. 
+
+The most similar sample in NCS2.0.0 is [nRF9160: nRF Cloud MQTT multi-service](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.0.0/nrf/samples/nrf9160/nrf_cloud_mqtt_multi_service/README.html). It is more complex but has more services like temperature, location and FOTA ready to use. This workshop is based on the nRF Cloud MQTT multi-service sample and adding similar tasks as previous workshop did. 
+
 
 ## Workshop Steps
 
