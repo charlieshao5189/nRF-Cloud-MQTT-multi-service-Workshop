@@ -9,8 +9,11 @@
 #include "application.h"
 #include "connection.h"
 #include "fota_support.h"
+#include <app_event_manager.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
+#define MODULE main
+#include <caf/events/module_state_event.h>
 
 static void msg_thread_fn(void)
 {
@@ -55,4 +58,6 @@ K_THREAD_DEFINE(conn_thread, CONFIG_CONNECTION_THREAD_STACK_SIZE, conn_thread_fn
 void main(void)
 {
 	LOG_INF("nRF Cloud MQTT multi-service sample has started.");
+        app_event_manager_init();
+        module_set_state(MODULE_STATE_READY);
 }

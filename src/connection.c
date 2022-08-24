@@ -16,6 +16,7 @@
 #include "location_tracking.h"
 
 #include "connection.h"
+#include <caf/events/led_event.h>
 
 LOG_MODULE_REGISTER(connection, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
 
@@ -55,6 +56,25 @@ K_MSGQ_DEFINE(device_message_queue, sizeof(char *), CONFIG_MAX_OUTGOING_MESSAGES
  * Resets on every successful device message send.
  */
 static int send_failure_count;
+
+// Define various LED effects to be used by the application
+const struct led_effect led_effect_red = LED_EFFECT_LED_ON(LED_COLOR(255, 0, 0));
+const struct led_effect led_effect_blink_red = LED_EFFECT_LED_BLINK(100, LED_COLOR(255, 0, 0));
+const struct led_effect led_effect_pulse_red = LED_EFFECT_LED_BREATH(100, LED_COLOR(255,0,0));
+const struct led_effect led_effect_blue = LED_EFFECT_LED_ON(LED_COLOR(0, 0, 255));
+const struct led_effect led_effect_blink_blue = LED_EFFECT_LED_BLINK(100, LED_COLOR(0, 0, 255));
+const struct led_effect led_effect_pulse_blue = LED_EFFECT_LED_BREATH(100, LED_COLOR(0, 0, 255));
+const struct led_effect led_effect_off = LED_EFFECT_LED_OFF();
+
+// This function is used to send LED events to the LED module, in order to set the LED in different states
+static void send_led_event(const struct led_effect *effect)
+{
+	struct led_event *event = new_led_event();
+
+	event->led_id = 0;
+	event->led_effect = effect;
+	APP_EVENT_SUBMIT(event);
+}
 
 /**
  * @brief Notify that LTE connection has been established.
@@ -317,10 +337,15 @@ static void cloud_event_handler(const struct nrf_cloud_evt *nrf_cloud_evt)
 
                 // Upon receiving the message {"temp":"read"} from the cloud, initiate a temperature reading
                 if(decode_cloud_message(nrf_cloud_evt->data.ptr, nrf_cloud_evt->data.len, "temp", "read")) {
-                LOG_INF("Temperature read command received");
-                k_work_reschedule(&cloud_update_work, K_NO_WAIT);
+                        LOG_INF("Temperature read command received");
+                        k_work_reschedule(&cloud_update_work, K_NO_WAIT);
+                }else if(decode_cloud_message(nrf_cloud_evt->data.ptr, nrf_cloud_evt->data.len,"led", "blink red")) {
+                        LOG_INF("Setting LED to blink red");
+                        send_led_event(&led_effect_blink_red);
+                } else if(decode_cloud_message(nrf_cloud_evt->data.ptr, nrf_cloud_evt->data.len,"led", "off")) {
+                        LOG_INF("Turning off LED");
+                        send_led_event(&led_effect_off);
                 }
-                
 		break;
 	case NRF_CLOUD_EVT_FOTA_START:
 		LOG_DBG("NRF_CLOUD_EVT_FOTA_START");
